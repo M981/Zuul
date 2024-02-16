@@ -4,15 +4,24 @@ class Room
 {
 	// Private fields
 	private string description;
+	private Inventory chest;
 	private Dictionary<string, Room> exits; // stores exits of this room.
 
+
+    public Inventory Chest
+    {
+        get { return chest; }
+    }
+
+    // Constructor
+    public Room(string desc)
+    {
+        description = desc;
+        chest = new Inventory(99999); // Initialize the chest
+        exits = new Dictionary<string, Room>();
+    }
 	// Create a room described "description". Initially, it has no exits.
 	// "description" is something like "in a kitchen" or "in a court yard".
-	public Room(string desc)
-	{
-		description = desc;
-		exits = new Dictionary<string, Room>();
-	}
 
 	// Define an exit for this room.
 	public void AddExit(string direction, Room neighbor)
@@ -29,14 +38,17 @@ class Room
 	// Return a long description of this room, in the form:
 	//     You are in the kitchen.
 	//     Exits: north, west
-	public string GetLongDescription()
-	{
-		string str = "You are ";
-		str += description;
-		str += ".\n";
-		str += GetExitString();
-		return str;
-	}
+    public string GetLongDescription(Player player)
+    {
+        string str = "You are ";
+        str += description;
+        str += ".\n";
+        if (player.IsAlive()) 
+        {
+            str += GetExitString();
+        }
+        return str;
+    }
 
 	// Return the room that is reached if we go from this room in direction
 	// "direction". If there is no room in that direction, return null.

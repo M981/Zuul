@@ -1,11 +1,14 @@
 using System;
+using System.Reflection.Metadata;
 
 class Game
 {
 	// Private fields
 	private Parser parser;
 	private Player player;
+	Item sword = new Item(15, "Sword");
 
+	Item medkit = new Item(20, "Medkit");
 	// Constructor
 	public Game()
 	{
@@ -49,11 +52,8 @@ class Game
 
 		office.AddExit("west", lab);
 
-		// Create your Items here
-		// ...
-		// And add them to the Rooms
-		// ...
-
+		theatre.Chest.Put("sword", sword);
+		lab.Chest.Put("medkit", medkit);
 		// Start game outside
 		player.CurrentRoom = outside;
 	}
@@ -84,7 +84,7 @@ class Game
 		Console.WriteLine("Zuul is a new, incredibly boring adventure game.");
 		Console.WriteLine("Type 'help' if you need help.");
 		Console.WriteLine();
-		Console.WriteLine(player.CurrentRoom.GetLongDescription());
+		Console.WriteLine(player.CurrentRoom.GetLongDescription(player));
 	}
 
 	// Given a command, process (that is: execute) the command.
@@ -96,7 +96,9 @@ private bool ProcessCommand(Command command)
 
     if (!player.IsAlive() && command.CommandWord != "quit")
     {
-        Console.WriteLine("You are dead. You can't do anything.");
+        Console.WriteLine("You bled out, you died...");
+		Console.WriteLine("You can only use the command:");
+		Console.WriteLine("quit");
         return wantToQuit;
     }
 
@@ -114,12 +116,21 @@ private bool ProcessCommand(Command command)
         case "look":
             Look();
             break;
+		case "take":
+			Take(command);
+			break;
+		case "drop":
+			Drop(command);
+			break;
         case "status":
             Health();
             break;
         case "go":
             GoRoom(command);
             break;
+		case "use":
+			UseItem(command);
+			break;
         case "quit":
             wantToQuit = true;
             break;
@@ -145,19 +156,71 @@ private bool ProcessCommand(Command command)
 
 	private void Look()
 	{
-		Console.WriteLine(player.CurrentRoom.GetLongDescription());
+		Console.WriteLine(player.CurrentRoom.GetLongDescription(player));
 
-		if (player.CurrentRoom.GetExit("door") != null)
+		Dictionary<string, Item> roomItems = player.CurrentRoom.Chest.GetItems();
+		if (roomItems.Count > 0)
 		{
-			Console.WriteLine("You found a door in the theatre, it seems like it leads to the university hallway.");
+			Console.WriteLine("Items in this room:");
+			foreach (var itemEntry in roomItems)
+			{
+				Console.WriteLine($"{itemEntry.Value.Description} - ({itemEntry.Value.Weight} kg)");
+			}
 		}
 	}
 
-		private void Health()
+
+	private void Take(Command command)
+	{
+		if (!command.HasSecondWord())
+		{
+			Console.WriteLine("Take what?");
+			return;
+		}
+
+		string itemName = command.SecondWord.ToLower();
+
+		bool success = player.TakeFromChest(itemName);
+
+	}
+
+	private void Drop(Command command)
+	{
+		if (!command.HasSecondWord())
+		{
+			Console.WriteLine("Drop what?");
+			return;
+		}
+
+		string itemName = command.SecondWord.ToLower();
+
+		bool success = player.DropToChest(itemName);
+
+
+	}
+
+	private void Health()
 	{
 		Console.WriteLine($"Your health is: {player.GetHealth()}");
 
+		Dictionary<string, Item> items = player.GetItems();
+
+		if (items.Count > 0)
+		{
+			Console.WriteLine("Your current items:");
+
+			// Iterate over elk item in player zijn inv
+			foreach (var itemEntry in items)
+			{
+				Console.WriteLine($"- {itemEntry.Key}: Weight {itemEntry.Value.Weight}");
+			}
+		}
+		else
+		{
+			Console.WriteLine("You have no items in your inventory.");
+		}
 	}
+
 	
 	// Try to go to one direction. If there is an exit, enter the new
 	// room, otherwise print an error message.
@@ -180,7 +243,32 @@ private bool ProcessCommand(Command command)
 			return;
 		}
 
+		player.Damage(25);
 		player.CurrentRoom = nextRoom;
-		Console.WriteLine(player.CurrentRoom.GetLongDescription());
+		Console.WriteLine(player.CurrentRoom.GetLongDescription(player));
+		if (player.CurrentRoom.GetExit("door") != null)
+		{
+			Console.WriteLine("You found a door in the theatre, it seems like it leads to the university hallway.");
+		}
+		
+		if (!player.IsAlive()) 
+		{
+			Console.WriteLine("Your vision blurs, the world fades. Your wounds draining your strength. You collapse, you have bled out..");
+		}
 	}
+
+	private void UseItem(Command command)
+	{
+		if (!command.HasSecondWord())
+		{
+			Console.WriteLine("Use what?");
+			return;
+		}
+
+		string itemName = command.SecondWord.ToLower();
+
+		player.Use(itemName);
+	}
+
 }
+
