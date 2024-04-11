@@ -14,6 +14,12 @@ class Inventory
         this.items = new Dictionary<string, Item>();
     }
 
+
+    public void RemoveWeight(int weight)
+    {
+        currentWeight -= weight;
+    }
+
     public bool Put(string itemName, Item item)
     {
         // Check inventory space

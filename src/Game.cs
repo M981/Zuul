@@ -6,7 +6,8 @@ class Game
 	// Private fields
 	private Parser parser;
 	private Player player;
-	Item sword = new Item(15, "Sword");
+	private bool keyUsed = false;
+	Item key = new Item(15, "Key");
 
 	Item medkit = new Item(20, "Medkit");
 	// Constructor
@@ -52,8 +53,8 @@ class Game
 
 		office.AddExit("west", lab);
 
-		theatre.Chest.Put("sword", sword);
-		lab.Chest.Put("medkit", medkit);
+		theatre.Chest.Put("key", key);
+		theatre.Chest.Put("medkit", medkit);
 		// Start game outside
 		player.CurrentRoom = outside;
 	}
@@ -92,21 +93,27 @@ class Game
 	// Otherwise false is returned.
 private bool ProcessCommand(Command command)
 {
-    bool wantToQuit = false;
+	bool wantToQuit = false;
 
-    if (!player.IsAlive() && command.CommandWord != "quit")
-    {
-        Console.WriteLine("You bled out, you died...");
+	if (!player.IsAlive() && command.CommandWord != "quit")
+	{
+		Console.WriteLine("You bled out, you died...");
 		Console.WriteLine("You can only use the command:");
 		Console.WriteLine("quit");
-        return wantToQuit;
-    }
+		return wantToQuit;
+	}
 
-    if(command.IsUnknown())
-    {
-        Console.WriteLine("I don't know what you mean...");
-        return wantToQuit; // false
-    }
+	if (keyUsed && command.CommandWord != "quit") 
+	{
+		Console.WriteLine("You have won the game, the only allowed command is 'quit'.");
+		return wantToQuit;
+	}
+
+	if (command.IsUnknown())
+	{
+		Console.WriteLine("I don't know what you mean...");
+		return wantToQuit;
+	}
 
     switch (command.CommandWord)
     {
@@ -129,14 +136,15 @@ private bool ProcessCommand(Command command)
             GoRoom(command);
             break;
 		case "use":
-			UseItem(command);
+			UseItem(command, out keyUsed); 
 			break;
-        case "quit":
-            wantToQuit = true;
-            break;
-    }
 
-    return wantToQuit;
+		case "quit":
+			wantToQuit = true;
+			break;
+	}
+
+	return wantToQuit;
 }
 
 	// ######################################
@@ -257,18 +265,34 @@ private bool ProcessCommand(Command command)
 		}
 	}
 
-	private void UseItem(Command command)
-	{
-		if (!command.HasSecondWord())
-		{
-			Console.WriteLine("Use what?");
-			return;
-		}
+    private void UseItem(Command command, out bool keyUsed)
+    {
+        if (!command.HasSecondWord())
+        {
+            Console.WriteLine("Use what?");
+            keyUsed = false;
+            return;
+        }
 
-		string itemName = command.SecondWord.ToLower();
+        string itemName = command.SecondWord.ToLower();
 
-		player.Use(itemName);
-	}
+        bool itemUsed = player.Use(itemName, out keyUsed);
 
+        if (itemUsed)
+        {
+            if (keyUsed)
+            {
+                this.keyUsed = true; 
+                Console.WriteLine("You called 911, an ambulance and police are on their way...");
+				Console.WriteLine("Your vision blurs as you lose consciousness...");
+				Console.WriteLine("You regain consciousness later, you are in an ambulance...");
+				Console.WriteLine(" ");
+				Console.WriteLine("Congratulations, you have won the game.");
+            }
+        }
+    }
 }
+
+
+
 

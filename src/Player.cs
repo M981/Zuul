@@ -74,14 +74,15 @@ class Player
     public bool DropToChest(string itemName)
     {
         Item item = backpack.Get(itemName);
-        
 
-        if (item != null) // item gevonden in inventory?
+        if (item != null) // Item found in inventory
         {
             bool success = CurrentRoom.Chest.Put(itemName, item);
-            
+
             if (success)
             {
+                backpack.RemoveWeight(item.Weight);
+
                 Console.WriteLine($"You dropped the {itemName}.");
                 return true;
             }
@@ -98,31 +99,45 @@ class Player
         }
     }
 
-    public void Use(string itemName)
-{
-    if (backpack.GetItems().ContainsKey(itemName))
+
+    public bool Use(string itemName, out bool keyUsed)
     {
-        if (itemName.ToLower() == "medkit")
+        keyUsed = false; 
+        if (backpack.GetItems().ContainsKey(itemName))
         {
-            health += 25;
-            if (health > 100)
+            if (itemName.ToLower() == "medkit")
             {
-                health = 100;
+                health += 25;
+                if (health > 100)
+                {
+                    health = 100;
+                }
+
+                backpack.GetItems().Remove(itemName);
+                backpack.RemoveWeight(20);
+                Console.WriteLine($"You used the medkit. Your health is now {health}.");
+                return true; 
             }
-
-            backpack.GetItems().Remove(itemName);
-
-            Console.WriteLine($"You used the medkit. Your health is now {health}.");
+            else if (itemName.ToLower() == "key")
+            {
+                keyUsed = true; // Set keyUsed to true
+                backpack.GetItems().Remove(itemName);
+                Console.WriteLine("You used the key.");
+                backpack.RemoveWeight(15);
+                return true; 
+            }
+            else
+            {
+                Console.WriteLine("You can't use that item.");
+                return false; 
+            }
         }
         else
         {
-            Console.WriteLine("You can't use that item.");
+            Console.WriteLine("You don't have that item in your inventory.");
+            return false; 
         }
     }
-    else
-    {
-        Console.WriteLine("You don't have that item in your inventory.");
-    }
-}
 
 }
+
